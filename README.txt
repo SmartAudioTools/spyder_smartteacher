@@ -3,7 +3,10 @@ spyder_smartteacher - le sujet d'un TP dans un dock de SmartPythonEditor
 
 CE QUE LE GREFFON AJOUTE
   Un panneau "SmartTeacher" (menu Fenetre > Panneaux). L'eleve y ouvre un sujet .qcm exporte par SmartTeacher ;
-  le panneau affiche la liste des etapes et l'enonce de l'etape courante, avec cinq boutons :
+  le panneau est dispose comme le lecteur .qcm en mode « une question par ecran » : en tete, le titre, la barre
+  d'avancement, Precedent / Suivant, « Non traitee » (l'etape voisine encore a faire), Terminer et le total ; dessous,
+  une etape (numero, statut et bareme ou note, enonce, aide et indices vus, boutons, retour de la correction).
+  Les boutons :
     Soumettre             photographie le fichier de l'eleve et le fait noter par les tests de l'etape ;
     Aide                  gratuite ; elle dit OU chercher dans le cours, jamais ce qu'on y trouve ;
     Indice                apres un delai, contre un malus ;
