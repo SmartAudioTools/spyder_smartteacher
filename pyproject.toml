@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "spyder-smartteacher"
+version = "0.1.0"
+description = "Dock SmartTeacher pour Spyder : sujet de TP, aide, indices, soumission et note par etape"
+requires-python = ">=3.9"
+dependencies = ["qtpy", "qtawesome"]
+
+# Le nom du point d'entree DOIT etre identique a l'attribut NAME de la classe
+# (spyder/app/find_plugins.py, find_external_plugins).
+[project.entry-points."spyder.plugins"]
+smartteacher = "spyder_smartteacher.spyder.plugin:SmartTeacher"
+
+[tool.setuptools.packages.find]
+include = ["spyder_smartteacher*"]
