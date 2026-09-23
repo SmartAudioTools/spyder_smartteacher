@@ -67,3 +67,7 @@ class SmartTeacher(SpyderDockablePlugin):
     def on_editor_available(self):
         widget = self.get_widget()
         widget.editeur = EditeurSpyder(self.get_plugin(Plugins.Editor), widget.renomme)
+
+    def on_mainwindow_visible(self):
+        # Pas avant : le mot de passe du sujet se demande dans un dialogue, qui doit s'ouvrir devant la fenetre.
+        self.get_widget().rouvrir_dernier()

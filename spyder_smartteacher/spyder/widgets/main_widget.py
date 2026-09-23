@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 """Le widget du dock : le panneau du TP, et deux actions, « Ouvrir un sujet… » et « Choisir mon fichier… ».
 
+Le dernier sujet ouvert est retenu dans la configuration de Spyder (section « smartteacher » de spyder.ini) et
+rouvert au lancement suivant, comme l'editeur rouvre ses fichiers.
+
 Il cree le pont a la premiere ouverture (un seul pour la seance de Spyder) et la Seance qui relie le paquet a
 l'editeur ; le greffon lui donne ``editeur`` (plugin.EditeurSpyder). Les dialogues sont des methodes, remplacees
 dans les tests.
 """
 
 import os
+from pathlib import Path
 
 import qtawesome as qta
 from qtpy.QtWidgets import QFileDialog, QInputDialog, QLineEdit, QMessageBox, QVBoxLayout
@@ -89,6 +93,13 @@ class SmartTeacherWidget(PluginMainWidget):
         self.panneau.apres_action = seance.sauver
         self.panneau.charger(*ouvert)
         self.update_actions()
+        self.set_conf("dernier_sujet", str(paquet))
+
+    def rouvrir_dernier(self):
+        """Au lancement de Spyder : le dernier sujet ouvert, s'il existe encore (mot de passe redemande)."""
+        paquet = self.get_conf("dernier_sujet", default="")
+        if paquet and Path(paquet).is_file():
+            self.ouvrir_sujet(paquet)
 
     def choisir_fichier(self, chemin=None):
         chemin = chemin or QFileDialog.getOpenFileName(self, "Choisir mon fichier", "", "Python (*.py)")[0]

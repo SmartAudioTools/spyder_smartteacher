@@ -179,6 +179,36 @@ class OuvrirUnSujet(unittest.TestCase):
         dialogue.assert_called_once()
         self.assertIsNotNone(self.w.panneau.session)
 
+    def test_le_sujet_ouvert_est_retenu_et_rouvert(self):
+        self.w.ouvrir_sujet(self.paquet)
+        self.assertEqual(self.w.get_conf("dernier_sujet"), str(self.paquet))
+        w = construire()  # Spyder relance : meme configuration, widget neuf
+        w.editeur, w.environ, w.fabrique_pont = EditeurFactice(), ENV, lambda: self.pont
+        w.demander_mot_de_passe = lambda erreur: "secret"
+        self.paquet.write_bytes(b"")  # le fichier existe
+        w.rouvrir_dernier()
+        self.assertIsNotNone(w.panneau.session)
+        self.assertEqual(w.editeur.ouverts, [str(self.dossier / NOM)])
+
+    def test_pas_de_reouverture_si_le_sujet_a_disparu(self):
+        self.w.set_conf("dernier_sujet", str(self.dossier / "parti.qcm"))
+        self.w.rouvrir_dernier()
+        self.assertIsNone(self.w.panneau.session)
+        self.assertEqual(self.avertissements, [])
+
+    def test_un_sujet_refuse_n_est_pas_retenu(self):
+        self.w.set_conf("dernier_sujet", "")
+        self.w.demander_mot_de_passe = lambda erreur: None
+        self.w.ouvrir_sujet(self.paquet)
+        self.assertEqual(self.w.get_conf("dernier_sujet"), "")
+
+    def test_le_greffon_rouvre_une_fois_la_fenetre_affichee(self):
+        from unittest import mock
+        from spyder_smartteacher.spyder.plugin import SmartTeacher
+        greffon = mock.Mock()
+        SmartTeacher.on_mainwindow_visible(greffon)
+        greffon.get_widget.return_value.rouvrir_dernier.assert_called_once_with()
+
     def test_un_seul_pont_pour_plusieurs_sujets(self):
         crees = []
         self.w.fabrique_pont = lambda: crees.append(1) or self.pont

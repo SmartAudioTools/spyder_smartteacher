@@ -21,6 +21,8 @@ UTILISATION
       premiere etape (jamais recrase s'il existe), puis ouvert dans l'editeur.
     - Le journal (etapes soumises, notes, aides vues) est enregistre a cote, chiffre avec le mot de passe du sujet : NOM_Prenom_TP_<sujet>.journal.
       Rouvrir le sujet reprend la ou l'eleve en etait, et rouvre son fichier.
+    - Le dernier sujet ouvert est rouvert au lancement suivant de Spyder (mot de passe redemande), s'il existe
+      encore ; il est retenu dans spyder.ini, section [smartteacher].
   "Choisir mon fichier..." : lier le TP a un fichier deja commence. Un "Enregistrer sous" dans Spyder deplace le
     lien avec le fichier.
   Soumettre envoie l'onglet ACTIF, enregistre puis relu sur le disque : ce qu'on voit est ce qu'on soumet. Si ce
