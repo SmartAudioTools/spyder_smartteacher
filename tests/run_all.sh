@@ -6,9 +6,11 @@ cd "$(dirname "$0")/.."
 PYTHON="${SPYDER_SMARTTEACHER_PYTHON:-/DATA/Python/SmartPython/CachyOS/versions/SmartPythonEditor/bin/python}"
 
 export QT_QPA_PLATFORM=offscreen
-# Comme le lanceur de SmartPythonEditor (install.sh du fork) : qtpy sur PySide6, la liaison de qtpy6 et du QCM.
-# Impose, pas seulement par defaut : un QT_API herite du shell (constate : QT_API=qt_api) empechait qtpy de charger.
-export QT_API=pyside6
+# Comme le lanceur de SmartPythonEditor (SmartOS : Commun/scripts/qt_api_env.sh) : PySide6 s'il est dans le venv,
+# PyQt6 sinon (Raspberry Pi, sans roue PySide6). Impose, jamais herite : QT_API vaut « auto » ou « qt_api » dans la
+# session KDE (QtEnvironment.sh, pour SmartPython), valeurs que qtpy refuse.
+QT_API=$("$PYTHON" -c "import PySide6" 2>/dev/null && echo pyside6 || echo pyqt6)
+export QT_API
 export PYTHONPATH="$PWD:$PYTHONPATH"
 
 "$PYTHON" -m unittest discover -s tests -t . -v "$@"

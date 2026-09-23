@@ -30,7 +30,10 @@ if [ "$SANS_TESTS" = false ]; then
     echo "ERREUR : tests en echec - installation annulee." >&2; exit 1; }
 fi
 
-python3 "$OUTIL_INSTALL" "$PLUGIN_DIR" "$SPYDER_PYTHON" || {
+# La verification finale d'install_spyder_plugin.py importe le greffon, donc qtpy : meme liaison que le lanceur de
+# Spyder, pas le QT_API de la session (« auto » ou « qt_api », refuses par qtpy).
+QT_API=$("$SPYDER_PYTHON" -c "import PySide6" 2>/dev/null && echo pyside6 || echo pyqt6) \
+  python3 "$OUTIL_INSTALL" "$PLUGIN_DIR" "$SPYDER_PYTHON" || {
   echo "ERREUR : l'installation du plugin a echoue." >&2; exit 1; }
 
 echo
