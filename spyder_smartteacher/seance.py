@@ -35,7 +35,7 @@ class Seance:
         """``(session, titre)``, ou None si l'eleve renonce (mot de passe, nom).
 
         Le fichier ``NOM_Prenom_TP_xxxx.py`` et son journal ``.journal`` sont a cote du paquet ; le journal garde
-        le fichier lie (« Choisir mon fichier… », « Enregistrer sous »), qui est rouvert s'il existe encore."""
+        le fichier lie (deplace par « Enregistrer sous »), qui est rouvert s'il existe encore."""
         paquet = Path(paquet)
         eleve = eleve_depuis_env(self.environ) or self.demander_eleve()
         if not eleve:
@@ -70,11 +70,6 @@ class Seance:
             return None
         self.editeur.enregistrer_actif()
         return Path(actif).read_text(encoding="utf-8")
-
-    def lier(self, chemin):
-        self.session.fichier = str(chemin)
-        self.editeur.ouvrir(str(chemin))
-        self.sauver()
 
     def renomme(self, ancien, nouveau):
         """« Enregistrer sous » dans Spyder : le lien suit le fichier du TP."""

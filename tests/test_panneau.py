@@ -1,7 +1,7 @@
 """Le panneau du dock : l'affichage d'une Session, sans Spyder ni pont (correcteur factice, offscreen).
 
-Disposition du lecteur .qcm en mode « question » : une entete (titre, barre d'avancement, navigation, Terminer,
-total), puis une etape par ecran (numero et bareme, enonce, aide et indices vus, boutons, retour de la correction).
+Disposition du lecteur .qcm en mode « question » : une entete (titre, barre d'avancement, total), puis une etape
+par ecran (numero et bareme, enonce, aide et indices vus, boutons, retour de la correction).
 
 Le greffon lui fournit deux fonctions : ``photo()`` (enregistre le fichier de l'eleve dans l'editeur et en rend le
 texte lu sur le disque, ou None si l'eleve renonce) et ``apres_action()`` (enregistre le journal).
@@ -9,7 +9,7 @@ texte lu sur le disque, ou None si l'eleve renonce) et ``apres_action()`` (enreg
 
 import unittest
 
-from qtpy.QtWidgets import QApplication
+from qtpy.QtWidgets import QApplication, QPushButton
 
 from spyder_smartteacher.spyder.widgets.panneau import PanneauTP
 from spyder_smartteacher.tp import A_FAIRE, CORRIGEE, SOUMISE, TRAITEE, Session
@@ -47,26 +47,22 @@ class Affichage(Base):
         self.assertEqual(self.p.barre_avancement.value(), 0)
 
     def test_precedent_suivant(self):
+        """Deux triangles, places par le greffon dans la barre d'outils du dock : des actions, pas des boutons."""
+        self.assertEqual((self.p.precedent.text(), self.p.suivant.text()), ("◀", "▶"))
         self.assertFalse(self.p.precedent.isEnabled())
-        self.p.suivant.click()
+        self.p.suivant.trigger()
         self.assertIn("Etape 2", self.p.enonce.text())
         self.assertIsNotNone(self.session.journal["etapes"]["e2"]["ouverte"])
         self.assertFalse(self.p.bouton_aide.isEnabled())  # pas d'aide pour l'etape 2
-        self.p.suivant.click()
+        self.p.suivant.trigger()
         self.assertFalse(self.p.suivant.isEnabled())
-        self.p.precedent.click()
+        self.p.precedent.trigger()
         self.assertEqual(self.p.i, 1)
 
-    def test_non_traitee_saute_les_etapes_rendues(self):
-        self.p.aller(1)
-        self.p.bouton_marquer.click()
-        self.p.aller(0)
-        self.p.suiv_libre.click()
-        self.assertEqual(self.p.i, 2)  # l'etape 2 est traitee : sautee
-        self.assertFalse(self.p.suiv_libre.isEnabled())
-        self.p.prec_libre.click()
-        self.assertEqual(self.p.i, 0)
-        self.assertFalse(self.p.prec_libre.isEnabled())
+    def test_ni_non_traitee_ni_terminer(self):
+        """Un projet se suit dans l'ordre et ne se « termine » pas : demande de l'utilisateur, 24/09/2026."""
+        textes = {b.text() for b in self.p.findChildren(QPushButton)}
+        self.assertFalse({"◀ Non traitée", "Non traitée ▶", "Terminer", "Précédent", "Suivant"} & textes, textes)
 
     def test_barre_d_avancement(self):
         self.p.bouton_soumettre.click()
@@ -143,38 +139,21 @@ class Marquer(Base):
         self.assertEqual(self.sauvegardes, [1])
 
 
-class Terminer(Base):
-    def test_terminer(self):
-        self.p.bouton_soumettre.click()
-        self.p.aller(1)
-        self.texte = "moitie"
-        self.p.bouton_marquer.click()
-        self.texte = "final"
-        self.p.bouton_terminer.click()
-        self.assertTrue(self.session.fini)
-        self.assertEqual([self.session.statut(i) for i in range(3)], [SOUMISE, CORRIGEE, CORRIGEE])
-        self.assertIn("2.5 / 4", self.p.total.text())
-        for bouton in (self.p.bouton_soumettre, self.p.bouton_marquer, self.p.bouton_terminer, self.p.bouton_indice):
-            self.assertFalse(bouton.isEnabled())
-        self.p.aller(2)
-        self.assertIn("fichier final", self.p.retour.text())  # le repli se dit
-
-    def test_terminer_demande_confirmation(self):
-        self.p.confirmer = lambda question: False
-        self.p.bouton_terminer.click()
-        self.assertFalse(self.session.fini)
-
-
 class Reprise(Base):
     def test_reprise_d_une_session_finie(self):
-        self.p.bouton_terminer.click()
+        self.session.terminer("final")  # un TP fige (journal d'une version qui avait Terminer)
         p = PanneauTP()
         p.charger(Session(etapes(), journal=self.session.journal, correcteur=self.correcteur), "Créer un jeu")
-        self.assertFalse(p.bouton_terminer.isEnabled())
+        self.assertFalse(p.bouton_soumettre.isEnabled())
         self.assertIn(CORRIGEE, p.gris.text())
 
 
 class Disposition(Base):
+    def test_panneau_vide_dit_comment_ouvrir(self):
+        p = PanneauTP()
+        self.assertIn("Fichier > Ouvrir", p.enonce.text())
+        self.assertFalse(p.precedent.isEnabled() or p.suivant.isEnabled())
+
     def test_marquer_a_gauche_de_soumettre(self):
         """Demande de l'utilisateur, 24/09/2026 : Marquer comme traitee, puis Soumettre, puis Aide et Indice."""
         self.p.resize(600, 500)
@@ -212,7 +191,7 @@ class CouleursDuLecteur(Base):
         return sorted(valeurs)[len(valeurs) // 2], min(valeurs)
 
     def test_texte_fonce_sur_fond_clair(self):
-        for widget in (self.p.enonce, self.p.rang, self.p.suivant, self.p.bouton_terminer):
+        for widget in (self.p.enonce, self.p.rang, self.p.bouton_marquer, self.p.bouton_aide):
             fond, sombre = self.zone(widget)
             self.assertGreater(fond, 200, widget)
             self.assertLess(sombre, 90, widget)

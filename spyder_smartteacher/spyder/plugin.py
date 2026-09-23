@@ -7,6 +7,8 @@ Seule couche qui connait le plugin Editor : EditeurSpyder lui traduit les trois 
 
 import qtawesome as qta
 
+from spyder.config.utils import _get_filters, get_edit_filetypes
+
 from spyder.api.plugin_registration.decorators import on_plugin_available
 from spyder.api.plugins import Plugins, SpyderDockablePlugin
 from spyder.utils.icon_manager import ima
@@ -44,9 +46,12 @@ class EditeurSpyder:
 class SmartTeacher(SpyderDockablePlugin):
     NAME = "smartteacher"  # doit etre identique au nom du point d'entree
     REQUIRES = [Plugins.Editor]
+    OPTIONAL = [Plugins.Application]
     WIDGET_CLASS = SmartTeacherWidget
     CONF_SECTION = "smartteacher"
     CONF_FILE = False
+    # Fichier > Ouvrir, l'explorateur et les projets confient les .qcm a open_file (Application.open_file_in_plugin).
+    FILE_EXTENSIONS = [".qcm"]
 
     @staticmethod
     def get_name():
@@ -67,6 +72,19 @@ class SmartTeacher(SpyderDockablePlugin):
     def on_editor_available(self):
         widget = self.get_widget()
         widget.editeur = EditeurSpyder(self.get_plugin(Plugins.Editor), widget.renomme)
+
+    @on_plugin_available(plugin=Plugins.Application)
+    def on_application_available(self):
+        """Les sujets visibles dans le dialogue Fichier > Ouvrir : dans le filtre « Supported text files », celui que
+        Spyder preselectionne quand un .py est ouvert (get_filter prend le premier qui contient l'extension), et
+        dans un filtre a eux. Le conteneur ne calcule ces filtres que s'ils sont encore None : on les lui donne."""
+        conteneur = self.get_plugin(Plugins.Application).get_container()
+        (titre, extensions), *autres = get_edit_filetypes()
+        types = [(titre, (*extensions, ".qcm")), *autres, ("Sujets SmartTeacher", (".qcm",))]
+        conteneur.edit_filetypes, conteneur.edit_filters = types, _get_filters(types)
+
+    def open_file(self, filename):
+        self.get_widget().ouvrir_sujet(filename)
 
     def on_mainwindow_visible(self):
         # Pas avant : le mot de passe du sujet se demande dans un dialogue, qui doit s'ouvrir devant la fenetre.

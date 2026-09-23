@@ -141,7 +141,7 @@ class Reprise(Base):
         autre = self.dossier / "monkey.py"
         autre.write_text("x")
         self.seance.ouvrir(self.paquet)
-        self.seance.lier(str(autre))
+        self.seance.renomme(self.seance.session.fichier, str(autre))  # « Enregistrer sous »
         self.editeur.ouverts.clear()
         reprise, _ = self.nouvelle().ouvrir(self.paquet)
         self.assertEqual(reprise.fichier, str(autre))
@@ -151,7 +151,7 @@ class Reprise(Base):
         autre = self.dossier / "monkey.py"
         autre.write_text("x")
         self.seance.ouvrir(self.paquet)
-        self.seance.lier(str(autre))
+        self.seance.renomme(self.seance.session.fichier, str(autre))
         autre.unlink()
         reprise, _ = self.nouvelle().ouvrir(self.paquet)
         self.assertEqual(reprise.fichier, str(self.dossier / NOM))
@@ -202,17 +202,6 @@ class Renommer(Base):
     def test_sans_session_rien_ne_casse(self):
         self.seance.renomme("a.py", "b.py")
 
-
-class Lier(Base):
-    def test_lier_ouvre_et_enregistre(self):
-        session, _ = self.seance.ouvrir(self.paquet)
-        autre = self.dossier / "monkey.py"
-        autre.write_text("x")
-        self.seance.lier(str(autre))
-        self.assertEqual(self.editeur.actif, str(autre))
-        session.marquer(0, "x")
-        self.seance.sauver()
-        self.assertEqual(self.nouvelle().ouvrir(self.paquet)[0].statut(0), TRAITEE)
 
 
 if __name__ == "__main__":

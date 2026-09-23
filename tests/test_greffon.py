@@ -63,8 +63,42 @@ class Greffon(unittest.TestCase):
         w = construire()
         self.assertTrue(w.get_title())
         self.assertIsNotNone(w.panneau)
-        self.assertEqual({"smartteacher_ouvrir", "smartteacher_lier"} - set(w.get_actions()), set())
-        self.assertFalse(w.get_action("smartteacher_lier").isEnabled())  # pas de sujet ouvert
+        # Barre du dock : les deux triangles de navigation, rien d'autre ; ni menu « burger » (vide) ni son bouton.
+        # Ouvrir un sujet passe par Fichier > Ouvrir de Spyder.
+        barre = [a for a in w.get_main_toolbar().actions() if not a.isSeparator() and a.isVisible()]
+        self.assertEqual([getattr(a, "action_id", None) for a in barre if getattr(a, "action_id", None)],
+                         ["smartteacher_precedent", "smartteacher_suivant"])
+        w._options_menu._dirty = True
+        w._options_menu.render()
+        self.assertEqual([a for a in w._options_menu.actions() if not a.isSeparator()], [])
+        w.show()
+        for _ in range(3):
+            QApplication.processEvents()  # le rangement du fork SmartOS est differe (QTimer 0)
+        self.assertFalse(w._options_button.isVisible())
+
+    def test_ouvert_par_fichier_ouvrir_de_spyder(self):
+        """Spyder (Application.open_file_in_plugin) confie au premier greffon dont FILE_EXTENSIONS contient
+        l'extension : dialogue Ouvrir, explorateur de fichiers, projets."""
+        from unittest import mock
+        from spyder_smartteacher.spyder.plugin import SmartTeacher
+        self.assertIn(".qcm", SmartTeacher.FILE_EXTENSIONS)
+        greffon = mock.Mock()
+        SmartTeacher.open_file(greffon, "/x/sujet.qcm")
+        greffon.get_widget.return_value.ouvrir_sujet.assert_called_once_with("/x/sujet.qcm")
+
+    def test_le_dialogue_ouvrir_montre_les_sujets(self):
+        """Le filtre par defaut du dialogue (« Supported text files ») et un filtre propre incluent *.qcm."""
+        from unittest import mock
+        from spyder_smartteacher.spyder.plugin import SmartTeacher
+        conteneur = mock.Mock(edit_filetypes=None, edit_filters=None)
+        greffon = mock.Mock()
+        greffon.get_plugin.return_value.get_container.return_value = conteneur
+        SmartTeacher.on_application_available(greffon)
+        self.assertIn("*.qcm", conteneur.edit_filters.split(";;")[0])
+        self.assertIn(".qcm", conteneur.edit_filetypes[0][1])
+        from spyder.config.utils import get_filter
+        self.assertIn("*.qcm", get_filter(conteneur.edit_filetypes, ".py"))  # filtre preselectionne, un .py ouvert
+        self.assertTrue(any("qcm" in f and "SmartTeacher" in f for f in conteneur.edit_filters.split(";;")))
 
 
 class StackFactice(QObject):
@@ -136,20 +170,11 @@ class OuvrirUnSujet(unittest.TestCase):
     def test_ouvrir_puis_soumettre(self):
         self.w.ouvrir_sujet(self.paquet)
         self.assertEqual(self.w.editeur.ouverts, [str(self.dossier / NOM)])
-        self.assertTrue(self.w.get_action("smartteacher_lier").isEnabled())
         (self.dossier / NOM).write_text("juste")
         self.w.panneau.bouton_soumettre.click()
         self.assertEqual(self.pont.corriger.appels, [("e1", "juste")])
         journal = self.pont.journaux[str(self.dossier / "LEFÈVRE_Zoé_TP_pyxel-projet-monkey.journal")]
         self.assertEqual(journal["etapes"]["e1"]["statut"], SOUMISE)  # apres_action a enregistre le journal
-
-    def test_choisir_mon_fichier(self):
-        self.w.ouvrir_sujet(self.paquet)
-        autre = self.dossier / "monkey.py"
-        autre.write_text("x")
-        self.w.choisir_fichier(autre)
-        self.assertEqual(self.w.seance.session.fichier, str(autre))
-        self.assertEqual(self.w.editeur.actif, str(autre))
 
     def test_renonce_au_mot_de_passe(self):
         self.w.demander_mot_de_passe = lambda erreur: None
@@ -170,14 +195,6 @@ class OuvrirUnSujet(unittest.TestCase):
         self.pont.ouvrir = illisible
         self.w.ouvrir_sujet(self.paquet)
         self.assertIn("illisible", self.avertissements[1])
-
-    def test_l_action_ouvre_le_dialogue(self):
-        from unittest import mock
-        with mock.patch("spyder_smartteacher.spyder.widgets.main_widget.QFileDialog.getOpenFileName",
-                        return_value=(str(self.paquet), "")) as dialogue:
-            self.w.get_action("smartteacher_ouvrir").trigger()
-        dialogue.assert_called_once()
-        self.assertIsNotNone(self.w.panneau.session)
 
     def test_le_sujet_ouvert_est_retenu_et_rouvert(self):
         self.w.ouvrir_sujet(self.paquet)

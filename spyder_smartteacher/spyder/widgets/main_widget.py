@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
-"""Le widget du dock : le panneau du TP, et deux actions, « Ouvrir un sujet… » et « Choisir mon fichier… ».
+"""Le widget du dock : le panneau du TP, et dans sa barre d'outils les deux triangles de navigation du panneau.
+
+Un sujet s'ouvre par Fichier > Ouvrir de Spyder (le greffon declare l'extension .qcm, voir plugin.py) : ni bouton
+propre, ni menu d'options.
 
 Retenus dans la configuration de Spyder (section « smartteacher » de spyder.ini) : le dernier sujet ouvert, rouvert
 au lancement suivant comme l'editeur rouvre ses fichiers, et le nom de l'eleve s'il a fallu le demander.
@@ -13,7 +16,7 @@ import os
 from pathlib import Path
 
 import qtawesome as qta
-from qtpy.QtWidgets import QFileDialog, QInputDialog, QLineEdit, QMessageBox, QVBoxLayout
+from qtpy.QtWidgets import QInputDialog, QLineEdit, QMessageBox, QVBoxLayout
 
 from spyder.api.widgets.main_widget import PluginMainWidget
 from spyder.utils.icon_manager import ima
@@ -22,7 +25,7 @@ from spyder_smartteacher.client import Pont, PontErreur
 from spyder_smartteacher.seance import Seance
 from spyder_smartteacher.spyder.widgets.panneau import PanneauTP
 
-OUVRIR, LIER = "smartteacher_ouvrir", "smartteacher_lier"
+PRECEDENT, SUIVANT = "smartteacher_precedent", "smartteacher_suivant"
 
 
 class SmartTeacherWidget(PluginMainWidget):
@@ -40,16 +43,20 @@ class SmartTeacherWidget(PluginMainWidget):
         return "SmartTeacher"
 
     def setup(self):
-        for nom, texte, icone, action in (
-                (OUVRIR, "Ouvrir un sujet…", "mdi.folder-open-outline", self.ouvrir_sujet),
-                (LIER, "Choisir mon fichier…", "mdi.link-variant", self.choisir_fichier)):
-            # triggered passe l'etat coche (False) : ``paquet or dialogue`` ouvre alors le dialogue.
-            self.add_item_to_toolbar(self.create_action(nom, text=texte, icon=qta.icon(icone, color=ima.MAIN_FG_COLOR),
-                                                        triggered=action),
-                                     toolbar=self.get_main_toolbar())
+        for action, nom, icone in ((self.panneau.precedent, PRECEDENT, "mdi.arrow-left-drop-circle-outline"),
+                                   (self.panneau.suivant, SUIVANT, "mdi.arrow-right-drop-circle-outline")):
+            action.action_id = nom  # identifiant exige par la barre d'outils de Spyder
+            action.setIcon(qta.icon(icone, color=ima.MAIN_FG_COLOR))
+            self.add_item_to_toolbar(action, toolbar=self.get_main_toolbar())
+        # Le menu d'options est vide : on retire son bouton. Il vit dans la barre de coin, ou c'est l'action qui le
+        # porte qui decide de sa visibilite (le setVisible du fork SmartOS sur le bouton lui-meme n'y tient pas).
+        coin = self._corner_widget
+        for action in coin.actions():
+            if coin.widgetForAction(action) is self._options_button:
+                action.setVisible(False)
 
     def update_actions(self):
-        self.get_action(LIER).setEnabled(self.panneau.session is not None)
+        pass  # obligatoire ; les triangles sont tenus a jour par le panneau
 
     def on_close(self):
         if self.pont is not None:
@@ -81,10 +88,7 @@ class SmartTeacherWidget(PluginMainWidget):
 
     # -- actions
 
-    def ouvrir_sujet(self, paquet=None):
-        paquet = paquet or QFileDialog.getOpenFileName(self, "Ouvrir un sujet", "", "Sujets (*.qcm)")[0]
-        if not paquet:
-            return
+    def ouvrir_sujet(self, paquet):
         try:
             if self.pont is None:
                 self.pont = self.fabrique_pont()
@@ -99,7 +103,6 @@ class SmartTeacherWidget(PluginMainWidget):
         self.panneau.photo = lambda: seance.photo(self.panneau.confirmer)
         self.panneau.apres_action = seance.sauver
         self.panneau.charger(*ouvert)
-        self.update_actions()
         self.set_conf("dernier_sujet", str(paquet))
 
     def rouvrir_dernier(self):
@@ -107,11 +110,6 @@ class SmartTeacherWidget(PluginMainWidget):
         paquet = self.get_conf("dernier_sujet", default="")
         if paquet and Path(paquet).is_file():
             self.ouvrir_sujet(paquet)
-
-    def choisir_fichier(self, chemin=None):
-        chemin = chemin or QFileDialog.getOpenFileName(self, "Choisir mon fichier", "", "Python (*.py)")[0]
-        if chemin:
-            self.seance.lier(str(chemin))
 
     def renomme(self, ancien, nouveau):
         if self.seance is not None:

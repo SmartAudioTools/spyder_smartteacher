@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 """Le panneau du dock, dispose comme le lecteur .qcm en mode « question » (modele.Paquet) : une entete (titre, barre
-d'avancement, navigation, Terminer, total), puis une etape par ecran (numero et bareme, enonce, aide et indices vus,
-Marquer comme traitee / Soumettre / Aide / Indice, retour de la correction).
+d'avancement, total), puis une etape par ecran (numero et bareme, enonce, aide et indices vus, Marquer comme
+traitee / Soumettre / Aide / Indice, retour de la correction). Les triangles de navigation sont des actions, que le
+greffon place dans la barre d'outils du dock.
 
 Simple affichage d'une Session (tp.py) : aucune decision n'est prise ici. Le greffon fournit deux fonctions,
 ``photo()`` (enregistre le fichier de l'eleve dans l'editeur et rend son texte lu sur le disque, ou None si
@@ -11,6 +12,7 @@ voir pont.py) ; ses couleurs et ses libelles sont repris ici.
 """
 
 from qtpy.QtCore import Qt, QTimer
+from qtpy.QtGui import QAction
 from qtpy.QtWidgets import (QHBoxLayout, QLabel, QMessageBox, QProgressBar, QPushButton,
                             QScrollArea, QVBoxLayout, QWidget)
 
@@ -58,7 +60,7 @@ class PanneauTP(QWidget):
         self.setAttribute(Qt.WA_StyledBackground)  # sans quoi une sous-classe de QWidget ignore son fond
         self.setStyleSheet(STYLE)
 
-        # -- entete : titre et avancement, navigation et Terminer, total
+        # -- entete : titre et avancement, total
         self.titre = _texte()
         self.barre_avancement = QProgressBar()  # modele.barre("avancement réponses", "vert")
         self.barre_avancement.setRange(0, 100)
@@ -72,26 +74,16 @@ class PanneauTP(QWidget):
         haut.addWidget(self.titre, 1)
         haut.addWidget(self.barre_avancement, 0, Qt.AlignTop)
 
-        self.precedent, self.suivant = QPushButton("Précédent"), QPushButton("Suivant")
-        self.prec_libre, self.suiv_libre = QPushButton("◀ Non traitée"), QPushButton("Non traitée ▶")
-        self.bouton_terminer = QPushButton("Terminer")
-        police = self.bouton_terminer.font()
-        police.setBold(True)  # comme dans le lecteur : le seul bouton sans retour se distingue
-        self.bouton_terminer.setFont(police)
-        navigation = QHBoxLayout()
-        navigation.addWidget(self.precedent)
-        navigation.addWidget(self.suivant)
-        navigation.addSpacing(18)  # deux groupes : l'etape voisine, puis la voisine encore a traiter
-        navigation.addWidget(self.prec_libre)
-        navigation.addWidget(self.suiv_libre)
-        navigation.addStretch()
-        navigation.addWidget(self.bouton_terminer)
+        # Navigation : deux triangles que le greffon met dans la barre d'outils du dock. Ni « Non traitee » (un projet
+        # se suit dans l'ordre) ni « Terminer » (un projet ne se fige pas) : demande de l'utilisateur, 24/09/2026.
+        self.precedent, self.suivant = QAction("◀", self), QAction("▶", self)
+        self.precedent.setToolTip("Étape précédente")
+        self.suivant.setToolTip("Étape suivante")
         self.total = QLabel()
 
         entete = QVBoxLayout()
         entete.setContentsMargins(9, 9, 9, 9)
         entete.addLayout(haut)
-        entete.addLayout(navigation)
         entete.addWidget(self.total)
 
         # -- l'etape courante
@@ -135,19 +127,17 @@ class PanneauTP(QWidget):
         disposition.addLayout(entete)
         disposition.addWidget(defilement, 1)
 
-        self.precedent.clicked.connect(lambda: self.aller(self.i - 1))
-        self.suivant.clicked.connect(lambda: self.aller(self.i + 1))
-        self.prec_libre.clicked.connect(lambda: self.aller(self._voisine(-1)))
-        self.suiv_libre.clicked.connect(lambda: self.aller(self._voisine(1)))
+        self.precedent.triggered.connect(lambda: self.aller(self.i - 1))
+        self.suivant.triggered.connect(lambda: self.aller(self.i + 1))
         self.bouton_aide.clicked.connect(self._aide)
         self.bouton_indice.clicked.connect(self._indice)
         self.bouton_soumettre.clicked.connect(self._soumettre)
         self.bouton_marquer.clicked.connect(self._marquer)
-        self.bouton_terminer.clicked.connect(self._terminer)
         self.minuterie = QTimer(self, interval=1000)
         self.minuterie.timeout.connect(self.rafraichir)
-        for b in self.findChildren(QPushButton):
+        for b in self.findChildren(QPushButton) + [self.precedent, self.suivant]:
             b.setEnabled(False)  # jusqu'au chargement d'un sujet
+        self.enonce.setText("Ouvre un sujet de TP (fichier .qcm) par **Fichier > Ouvrir** de Spyder.")
 
     def confirmer(self, question):
         return QMessageBox.question(self, "SmartTeacher", question) == QMessageBox.Yes
@@ -168,11 +158,6 @@ class PanneauTP(QWidget):
         self.rang.setText(f"<b>Étape n°{i + 1}</b>")
         self.enonce.setText(self.session.etapes[i]["enonce"])
         self._etape()
-
-    def _voisine(self, sens):
-        """Rang de l'etape suivante (``sens`` = 1) ou precedente (-1) encore a faire, ou None."""
-        fin = len(self.session.etapes) if sens > 0 else -1
-        return next((n for n in range(self.i + sens, fin, sens) if self.session.statut(n) == A_FAIRE), None)
 
     def _etape(self, erreur=None):
         """Ce qui change quand l'etape change d'etat : bareme ou note, aide et indices vus, retour."""
@@ -198,15 +183,12 @@ class PanneauTP(QWidget):
         modifiable = s.modifiable(i)
         self.precedent.setEnabled(i > 0)
         self.suivant.setEnabled(i < n - 1)
-        self.prec_libre.setEnabled(self._voisine(-1) is not None)
-        self.suiv_libre.setEnabled(self._voisine(1) is not None)
         self.bouton_aide.setEnabled(bool(s.etapes[i]["aide"]))
         attente = s.attente_indice(i) if modifiable else None
         self.bouton_indice.setEnabled(attente == 0)
         self.bouton_indice.setText("Indice" if not attente else f"Indice (dans {attente} s)")
         self.bouton_soumettre.setEnabled(modifiable)
         self.bouton_marquer.setEnabled(modifiable)
-        self.bouton_terminer.setEnabled(not s.fini)
         self.barre_avancement.setValue(round(100 * sum(s.statut(k) != A_FAIRE for k in range(n)) / n))
         obtenus, sur = s.total()
         self.total.setText(f"Total : {_nombre(obtenus)} / {_nombre(sur)}" + ("" if s.fini else " (étapes corrigées)"))
@@ -248,8 +230,3 @@ class PanneauTP(QWidget):
     def _marquer(self):
         i = self.i
         self._photo_puis(lambda texte: self.session.marquer(i, texte))
-
-    def _terminer(self):
-        self._photo_puis(self.session.terminer,
-                         "Terminer le TP ? Les étapes marquées sont corrigées sur leur photo, les autres sur ton "
-                         "fichier actuel. Plus rien ne pourra être modifié.")

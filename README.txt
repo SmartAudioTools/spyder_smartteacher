@@ -2,30 +2,32 @@ spyder_smartteacher - le sujet d'un TP dans un dock de SmartPythonEditor
 =======================================================================
 
 CE QUE LE GREFFON AJOUTE
-  Un panneau "SmartTeacher" (menu Fenetre > Panneaux). L'eleve y ouvre un sujet .qcm exporte par SmartTeacher ;
+  Un panneau "SmartTeacher" (menu Fenetre > Panneaux). L'eleve y suit un sujet .qcm exporte par SmartTeacher ;
   le panneau est dispose comme le lecteur .qcm en mode « une question par ecran » : en tete, le titre, la barre
-  d'avancement, Precedent / Suivant, « Non traitee » (l'etape voisine encore a faire), Terminer et le total ; dessous,
-  une etape (numero, statut et bareme ou note, enonce, aide et indices vus, boutons, retour de la correction).
+  d'avancement et le total ; dessous, une etape (numero, statut et bareme ou note, enonce, aide et indices vus,
+  boutons, retour de la correction). Les deux triangles de la barre d'outils du dock passent a l'etape precedente
+  ou suivante : un projet se suit dans l'ordre, sans saut vers « la prochaine non traitee », et ne se « termine »
+  pas (chaque etape est notee a sa soumission).
   Il garde les couleurs claires du lecteur (texte fonce sur fond clair) meme sous le theme sombre de Spyder.
   Les boutons :
     Soumettre             photographie le fichier de l'eleve et le fait noter par les tests de l'etape ;
     Aide                  gratuite ; elle dit OU chercher dans le cours, jamais ce qu'on y trouve ;
     Indice                apres un delai, contre un malus ;
-    Marquer comme traitee pour avancer sans soumettre ;
-    Terminer              corrige les etapes marquees sur leur photo, les autres sur le fichier actuel, et fige le TP.
+    Marquer comme traitee pour avancer sans soumettre.
   L'eleve code dans l'editeur de Spyder, dans UN SEUL fichier pour tout le TP (jamais un fichier par etape) ;
   F5, la console et l'explorateur de variables servent comme d'habitude.
 
 UTILISATION
-  "Ouvrir un sujet..." (barre du panneau) : choisir le .qcm, donner le mot de passe s'il est protege.
+  Fichier > Ouvrir de Spyder (ou un double-clic dans l'explorateur de fichiers) : choisir le .qcm, donner le mot de
+  passe s'il est protege. Le dialogue montre les .qcm avec les fichiers texte, et dans un filtre « Sujets
+  SmartTeacher ».
     - Le fichier de l'eleve, NOM_Prenom_TP_<sujet>.py, est cree a cote du .qcm avec le code de depart de la
       premiere etape (jamais recrase s'il existe), puis ouvert dans l'editeur.
     - Le journal (etapes soumises, notes, aides vues) est enregistre a cote, chiffre avec le mot de passe du sujet : NOM_Prenom_TP_<sujet>.journal.
       Rouvrir le sujet reprend la ou l'eleve en etait, et rouvre son fichier.
     - Le dernier sujet ouvert est rouvert au lancement suivant de Spyder (mot de passe redemande), s'il existe
       encore ; il est retenu dans spyder.ini, section [smartteacher].
-  "Choisir mon fichier..." : lier le TP a un fichier deja commence. Un "Enregistrer sous" dans Spyder deplace le
-    lien avec le fichier.
+  Un "Enregistrer sous" dans Spyder deplace le lien entre le TP et le fichier de l'eleve.
   Soumettre envoie l'onglet ACTIF, enregistre puis relu sur le disque : ce qu'on voit est ce qu'on soumet. Si ce
   n'est pas le fichier du TP, une confirmation nomme les deux fichiers.
 

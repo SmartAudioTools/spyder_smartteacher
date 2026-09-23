@@ -37,5 +37,5 @@ QT_API=$("$SPYDER_PYTHON" -c "import PySide6" 2>/dev/null && echo pyside6 || ech
   echo "ERREUR : l'installation du plugin a echoue." >&2; exit 1; }
 
 echo
-echo "Plugin 'SmartTeacher' installe. Dans Spyder : menu Fenetre > Panneaux > SmartTeacher, puis « Ouvrir un sujet… »."
+echo "Plugin 'SmartTeacher' installe. Dans Spyder : Fichier > Ouvrir un sujet .qcm (panneau : Fenetre > Panneaux > SmartTeacher)."
 echo "Documentation : $PLUGIN_DIR/README.txt"
