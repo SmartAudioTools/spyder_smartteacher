@@ -2,7 +2,7 @@
 
 import unittest
 
-from spyder_smartteacher.tp import VAR_NOM, VAR_PRENOM, eleve_depuis_env, nom_fichier
+from spyder_smartteacher.tp import eleve_depuis_env, nom_fichier
 
 
 class NomFichier(unittest.TestCase):
@@ -19,11 +19,15 @@ class NomFichier(unittest.TestCase):
         self.assertEqual(nom_fichier("MARTIN", "Jean Pierre", "t"), "MARTIN_Jean-Pierre_TP_t.py")
 
     def test_env(self):
-        self.assertEqual(eleve_depuis_env({VAR_NOM: " Dupont ", VAR_PRENOM: "Marie"}), ("Dupont", "Marie"))
+        # Les variables posees par le poste de l'eleve (ELEVE_ID, le nom du coffre, ne sert pas au nom du fichier).
+        env = {"ELEVE_ID": "lefevre_zoe", "ELEVE_NOM": " Lefèvre ", "ELEVE_PRENOM": "Zoé"}
+        self.assertEqual(eleve_depuis_env(env), ("Lefèvre", "Zoé"))
+        self.assertEqual(nom_fichier(*eleve_depuis_env(env), "pyxel_projet_monkey"),
+                         "LEFÈVRE_Zoé_TP_pyxel-projet-monkey.py")
 
     def test_env_absente_ou_vide(self):
         self.assertIsNone(eleve_depuis_env({}))
-        self.assertIsNone(eleve_depuis_env({VAR_NOM: "Dupont", VAR_PRENOM: "  "}))
+        self.assertIsNone(eleve_depuis_env({"ELEVE_NOM": "Dupont", "ELEVE_PRENOM": "  "}))
 
 
 if __name__ == "__main__":

@@ -9,8 +9,9 @@ import os
 import re
 import time
 
-# Provisoires : a renommer si le poste de l'eleve fournit d'autres variables.
-VAR_NOM, VAR_PRENOM = "SMARTTEACHER_NOM", "SMARTTEACHER_PRENOM"
+# Posees par le poste de l'eleve, telles qu'il les a tapees (« Lefèvre », « Zoé ») ; ELEVE_ID (le nom du coffre,
+# « lefevre_zoe ») ne sert pas ici.
+VAR_NOM, VAR_PRENOM = "ELEVE_NOM", "ELEVE_PRENOM"
 
 
 def _propre(texte):
