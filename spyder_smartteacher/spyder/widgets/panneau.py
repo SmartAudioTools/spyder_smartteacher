@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Le panneau du dock, dispose comme le lecteur .qcm en mode « question » (modele.Paquet) : une entete (titre, barre
 d'avancement, navigation, Terminer, total), puis une etape par ecran (numero et bareme, enonce, aide et indices vus,
-Soumettre / Marquer comme traitee / Aide / Indice, retour de la correction).
+Marquer comme traitee / Soumettre / Aide / Indice, retour de la correction).
 
 Simple affichage d'une Session (tp.py) : aucune decision n'est prise ici. Le greffon fournit deux fonctions,
 ``photo()`` (enregistre le fichier de l'eleve dans l'editeur et rend son texte lu sur le disque, ou None si
@@ -110,8 +110,8 @@ class PanneauTP(QWidget):
                                        "Tu peux la remplacer tant que le TP n'est pas terminé.")
         self.bouton_aide.setToolTip("Une piste pour démarrer, sans perdre de points.")
         barre = QHBoxLayout()
-        barre.addWidget(self.bouton_soumettre)
         barre.addWidget(self.bouton_marquer)
+        barre.addWidget(self.bouton_soumettre)
         barre.addStretch()  # l'aide et l'indice a l'ecart des boutons qui rendent la copie
         barre.addWidget(self.bouton_aide)
         barre.addWidget(self.bouton_indice)

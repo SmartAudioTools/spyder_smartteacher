@@ -174,6 +174,16 @@ class Reprise(Base):
         self.assertIn(CORRIGEE, p.gris.text())
 
 
+class Disposition(Base):
+    def test_marquer_a_gauche_de_soumettre(self):
+        """Demande de l'utilisateur, 24/09/2026 : Marquer comme traitee, puis Soumettre, puis Aide et Indice."""
+        self.p.resize(600, 500)
+        self.p.show()
+        app.processEvents()
+        x = [b.mapTo(self.p, b.rect().topLeft()).x() for b in
+             (self.p.bouton_marquer, self.p.bouton_soumettre, self.p.bouton_aide, self.p.bouton_indice)]
+        self.assertEqual(x, sorted(x))
+
 try:
     from spyder.utils.stylesheet import APP_STYLESHEET
 except ImportError:
