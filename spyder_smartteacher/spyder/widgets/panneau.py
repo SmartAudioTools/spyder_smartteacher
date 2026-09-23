@@ -11,8 +11,7 @@ voir pont.py) ; ses couleurs et ses libelles sont repris ici.
 """
 
 from qtpy.QtCore import Qt, QTimer
-from qtpy.QtGui import QColor
-from qtpy.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel, QMessageBox, QProgressBar, QPushButton,
+from qtpy.QtWidgets import (QHBoxLayout, QLabel, QMessageBox, QProgressBar, QPushButton,
                             QScrollArea, QVBoxLayout, QWidget)
 
 from spyder_smartteacher.tp import A_FAIRE
@@ -36,10 +35,17 @@ def _texte():
     return t
 
 
-def _fond():
-    """modele.fond_sujet : a mi-chemin entre le gris de la fenetre et le blanc des champs."""
-    fenetre, champ = QApplication.palette().window().color(), QApplication.palette().base().color()
-    return QColor(*((a + b) // 2 for a, b in zip(fenetre.getRgb()[:3], champ.getRgb()[:3])))
+# Les couleurs claires du lecteur, quel que soit le theme de Spyder (sombre par defaut : texte blanc sur #19232D,
+# difficile a lire pour un enonce). Fond : modele.fond_sujet sous la palette claire de Breeze, a mi-chemin entre
+# la fenetre (#eff0f1) et les champs (#fcfcfc). Feuille locale au panneau : elle l'emporte sur celle de Spyder.
+STYLE = """
+#panneauTP, #panneauTP QWidget { background: #f5f6f6; color: #232627; }
+#panneauTP QScrollArea { border: none; border-top: 1px solid #c0c0c0; }  /* separe l'entete de l'etape */
+#panneauTP QPushButton { background: #fcfcfc; border: 1px solid #b0b0b0; border-radius: 3px; padding: 3px 8px; }
+#panneauTP QPushButton:hover { border-color: #3daee9; }
+#panneauTP QPushButton:pressed { background: #e3e5e7; }
+#panneauTP QPushButton:disabled { background: #f0f0f0; color: #a0a0a0; border-color: #d0d0d0; }
+"""
 
 
 class PanneauTP(QWidget):
@@ -48,10 +54,9 @@ class PanneauTP(QWidget):
         self.session, self.i = None, 0
         self.photo = lambda: None
         self.apres_action = lambda: None
-        palette = self.palette()
-        palette.setColor(self.backgroundRole(), _fond())
-        self.setPalette(palette)
-        self.setAutoFillBackground(True)
+        self.setObjectName("panneauTP")
+        self.setAttribute(Qt.WA_StyledBackground)  # sans quoi une sous-classe de QWidget ignore son fond
+        self.setStyleSheet(STYLE)
 
         # -- entete : titre et avancement, navigation et Terminer, total
         self.titre = _texte()
@@ -88,9 +93,6 @@ class PanneauTP(QWidget):
         entete.addLayout(haut)
         entete.addLayout(navigation)
         entete.addWidget(self.total)
-        trait = QFrame()
-        trait.setFrameShape(QFrame.HLine)
-        trait.setFrameShadow(QFrame.Sunken)
 
         # -- l'etape courante
         self.rang, self.gris = QLabel(), QLabel()
@@ -126,15 +128,11 @@ class PanneauTP(QWidget):
         defilement = QScrollArea()
         defilement.setWidget(page)
         defilement.setWidgetResizable(True)
-        defilement.setFrameShape(QFrame.NoFrame)
-        defilement.viewport().setAutoFillBackground(False)  # le fond du panneau, pas celui de la fenetre
-        page.setAutoFillBackground(False)
 
         disposition = QVBoxLayout(self)
         disposition.setContentsMargins(0, 0, 0, 0)
         disposition.setSpacing(0)
         disposition.addLayout(entete)
-        disposition.addWidget(trait)
         disposition.addWidget(defilement, 1)
 
         self.precedent.clicked.connect(lambda: self.aller(self.i - 1))

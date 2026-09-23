@@ -6,6 +6,7 @@ CE QUE LE GREFFON AJOUTE
   le panneau est dispose comme le lecteur .qcm en mode « une question par ecran » : en tete, le titre, la barre
   d'avancement, Precedent / Suivant, « Non traitee » (l'etape voisine encore a faire), Terminer et le total ; dessous,
   une etape (numero, statut et bareme ou note, enonce, aide et indices vus, boutons, retour de la correction).
+  Il garde les couleurs claires du lecteur (texte fonce sur fond clair) meme sous le theme sombre de Spyder.
   Les boutons :
     Soumettre             photographie le fichier de l'eleve et le fait noter par les tests de l'etape ;
     Aide                  gratuite ; elle dit OU chercher dans le cours, jamais ce qu'on y trouve ;

@@ -174,5 +174,39 @@ class Reprise(Base):
         self.assertIn(CORRIGEE, p.gris.text())
 
 
+try:
+    from spyder.utils.stylesheet import APP_STYLESHEET
+except ImportError:
+    APP_STYLESHEET = None
+
+
+@unittest.skipIf(APP_STYLESHEET is None, "Spyder absent de ce Python")
+class CouleursDuLecteur(Base):
+    """Sous le theme sombre de Spyder (sa vraie feuille de style), le panneau garde les couleurs claires du lecteur :
+    texte fonce sur fond clair, boutons compris. Constate avant : consignes en blanc sur noir, difficiles a lire."""
+
+    def setUp(self):
+        app.setStyleSheet(str(APP_STYLESHEET))
+        self.addCleanup(app.setStyleSheet, "")
+        super().setUp()
+        self.p.resize(600, 500)
+        self.p.show()
+        app.processEvents()
+        self.image = self.p.grab().toImage()
+
+    def zone(self, widget):
+        """Lumiere du fond (la mediane : le texte n'occupe qu'une petite part) et du trait le plus sombre."""
+        r = widget.rect().translated(widget.mapTo(self.p, widget.rect().topLeft()))
+        valeurs = [self.image.pixelColor(x, y).lightness() for x in range(r.left(), r.right(), 2)
+                   for y in range(r.top(), r.bottom(), 2)]
+        return sorted(valeurs)[len(valeurs) // 2], min(valeurs)
+
+    def test_texte_fonce_sur_fond_clair(self):
+        for widget in (self.p.enonce, self.p.rang, self.p.suivant, self.p.bouton_terminer):
+            fond, sombre = self.zone(widget)
+            self.assertGreater(fond, 200, widget)
+            self.assertLess(sombre, 90, widget)
+
+
 if __name__ == "__main__":
     unittest.main()
