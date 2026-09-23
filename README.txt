@@ -30,7 +30,8 @@ UTILISATION
   n'est pas le fichier du TP, une confirmation nomme les deux fichiers.
 
 VARIABLES D'ENVIRONNEMENT
-  ELEVE_NOM, ELEVE_PRENOM  nom et prenom tels que tapes (poste de l'eleve) ; a defaut, le panneau les demande.
+  ELEVE_NOM, ELEVE_PRENOM  nom et prenom tels que tapes (poste de l'eleve) ; a defaut, le panneau les demande une
+                           fois et les retient dans spyder.ini (section [smartteacher], cle eleve).
   SMARTTEACHER_PYTHON      le Python du QCM (defaut : .../versions/SmartPython/bin/python).
   SMARTTEACHER_QCM         le dossier QCM de SmartTeacher (defaut : /DATA/Python/SmartTeacher/QCM).
 

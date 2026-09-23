@@ -209,6 +209,33 @@ class OuvrirUnSujet(unittest.TestCase):
         SmartTeacher.on_mainwindow_visible(greffon)
         greffon.get_widget.return_value.rouvrir_dernier.assert_called_once_with()
 
+    def test_nom_demande_une_seule_fois(self):
+        """Sans ELEVE_NOM / ELEVE_PRENOM (poste personnel), le nom est retenu dans spyder.ini : Spyder relance, il
+        n'est pas redemande."""
+        self.w.set_conf("eleve", [])
+        demandes = []
+        self.w.environ = {}
+        self.w.demander_eleve = lambda: demandes.append(1) or ("Lefèvre", "Zoé")
+        self.w.ouvrir_sujet(self.paquet)
+        w = construire()  # Spyder relance : meme configuration, widget neuf
+        w.editeur, w.environ, w.fabrique_pont = EditeurFactice(), {}, lambda: self.pont
+        w.demander_mot_de_passe = lambda erreur: "secret"
+        w.demander_eleve = lambda: demandes.append(2)
+        w.ouvrir_sujet(self.paquet)
+        self.assertEqual(demandes, [1])
+        self.assertEqual(w.editeur.ouverts, [str(self.dossier / NOM)])
+
+    def test_l_environnement_l_emporte_sur_le_nom_retenu(self):
+        self.w.set_conf("eleve", ["Autre", "Élève"])
+        self.w.ouvrir_sujet(self.paquet)  # ENV : Lefèvre Zoé
+        self.assertEqual(self.w.editeur.ouverts, [str(self.dossier / NOM)])
+
+    def test_un_nom_refuse_n_est_pas_retenu(self):
+        self.w.set_conf("eleve", [])
+        self.w.environ, self.w.demander_eleve = {}, lambda: None
+        self.w.ouvrir_sujet(self.paquet)
+        self.assertEqual(self.w.get_conf("eleve"), [])
+
     def test_un_seul_pont_pour_plusieurs_sujets(self):
         crees = []
         self.w.fabrique_pont = lambda: crees.append(1) or self.pont

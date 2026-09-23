@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """Le widget du dock : le panneau du TP, et deux actions, « Ouvrir un sujet… » et « Choisir mon fichier… ».
 
-Le dernier sujet ouvert est retenu dans la configuration de Spyder (section « smartteacher » de spyder.ini) et
-rouvert au lancement suivant, comme l'editeur rouvre ses fichiers.
+Retenus dans la configuration de Spyder (section « smartteacher » de spyder.ini) : le dernier sujet ouvert, rouvert
+au lancement suivant comme l'editeur rouvre ses fichiers, et le nom de l'eleve s'il a fallu le demander.
 
 Il cree le pont a la premiere ouverture (un seul pour la seance de Spyder) et la Seance qui relie le paquet a
 l'editeur ; le greffon lui donne ``editeur`` (plugin.EditeurSpyder). Les dialogues sont des methodes, remplacees
@@ -72,6 +72,13 @@ class SmartTeacherWidget(PluginMainWidget):
         prenom, ok = QInputDialog.getText(self, "SmartTeacher", "Ton prénom :")
         return (nom, prenom) if ok and prenom.strip() else None
 
+    def eleve_retenu(self):
+        """Sans ELEVE_NOM / ELEVE_PRENOM (poste personnel) : le nom donne une fois, retenu dans spyder.ini."""
+        eleve = tuple(self.get_conf("eleve", default=[])) or self.demander_eleve()
+        if eleve:
+            self.set_conf("eleve", list(eleve))
+        return eleve
+
     # -- actions
 
     def ouvrir_sujet(self, paquet=None):
@@ -81,7 +88,7 @@ class SmartTeacherWidget(PluginMainWidget):
         try:
             if self.pont is None:
                 self.pont = self.fabrique_pont()
-            seance = Seance(self.pont, self.editeur, self.demander_mot_de_passe, self.demander_eleve, self.environ)
+            seance = Seance(self.pont, self.editeur, self.demander_mot_de_passe, self.eleve_retenu, self.environ)
             ouvert = seance.ouvrir(paquet)
         except (OSError, PontErreur) as erreur:
             self.avertir(f"Impossible d'ouvrir le sujet : {erreur}")
