@@ -4,6 +4,7 @@ Sans Spyder ni pont : un pont factice (memes methodes que client.Pont) et un edi
 le greffon demande a l'editeur de Spyder).
 """
 
+import copy
 import shutil
 import tempfile
 import unittest
@@ -30,11 +31,11 @@ class PontFactice:
         return {"titre": "Créer un jeu", "etapes": etapes()}
 
     def sauver_journal(self, chemin, journal):
-        self.journaux[str(chemin)] = journal
+        self.journaux[str(chemin)] = copy.deepcopy(journal)  # une copie, comme un fichier : pas une reference vivante
         Path(chemin).write_text("chiffré")
 
     def charger_journal(self, chemin):
-        return self.journaux[str(chemin)]
+        return copy.deepcopy(self.journaux[str(chemin)])
 
 
 class EditeurFactice:
