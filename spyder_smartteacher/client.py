@@ -10,8 +10,8 @@ from spyder_smartteacher.pont import MARQUE
 
 PYTHON_DEFAUT = "/DATA/Python/SmartPython/CachyOS/versions/SmartPython/bin/python"
 QCM_DEFAUT = "/DATA/Python/SmartTeacher/QCM"
-# Propres au processus de Spyder : transmises au pont, elles lui feraient charger une autre liaison Qt
-# (qtpy6 lit QT_API, que Spyder met a pyqt5) ou les modules du venv de Spyder.
+# Propres au processus de Spyder : transmises au pont, elles lui feraient charger une autre liaison Qt (qtpy6 lit
+# QT_API, que le lanceur du Raspberry Pi met a pyqt6) ou les modules du venv de Spyder.
 NON_TRANSMISES = ("PYTHONPATH", "PYTHONHOME", "QT_API", "QT_PLUGIN_PATH", "QT_QPA_PLATFORM_PLUGIN_PATH")
 
 

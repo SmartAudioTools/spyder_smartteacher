@@ -12,7 +12,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from spyder_smartteacher.client import Pont, PontErreur, python_qcm, dossier_qcm
+from spyder_smartteacher.client import NON_TRANSMISES, Pont, PontErreur, python_qcm, dossier_qcm
 from spyder_smartteacher.tp import SOUMISE, Session
 
 PAQUET = Path(os.environ.get("SMARTTEACHER_TEST_PAQUET", Path(dossier_qcm()) / "Exports/eleve/pyxel_projet_monkey.qcm"))
@@ -23,7 +23,8 @@ def solutions():
     code = ("import json, sys\nfrom voir import ouvrir\np, _ = ouvrir(sys.argv[1], None, False)\n"
             "print('@@' + json.dumps({f.id: f.solution for q in p.questions() for f in q.feuilles()}))")
     sortie = subprocess.run([python_qcm(), "-c", code, str(PAQUET)], cwd=dossier_qcm(), capture_output=True, text=True,
-                            env={**os.environ, "QT_QPA_PLATFORM": "offscreen"}, check=True).stdout
+                            env={**{k: v for k, v in os.environ.items() if k not in NON_TRANSMISES},
+                                 "QT_QPA_PLATFORM": "offscreen"}, check=True).stdout
     return json.loads(next(ligne for ligne in sortie.splitlines() if ligne.startswith("@@"))[2:])
 
 
@@ -31,8 +32,8 @@ def solutions():
 class PontMonkey(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Lance comme depuis Spyder : QT_API=pyqt5 et le PYTHONPATH du greffon ne doivent pas atteindre le pont
-        # (qtpy6 lit QT_API, et une valeur pyqt5 lui ferait choisir une liaison absente ou refuser de demarrer).
+        # Le pont ne doit pas dependre de la liaison de Spyder : QT_API=pyqt6 (le lanceur du Raspberry Pi, sans
+        # PySide6) ferait passer qtpy6, donc modele.py, sous PyQt6 ; une valeur qu'il ignore l'empecherait de demarrer.
         avant = os.environ.get("QT_API")
         os.environ["QT_API"] = "pyqt5"
         try:
