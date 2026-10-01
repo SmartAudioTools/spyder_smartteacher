@@ -77,9 +77,11 @@ class SmartTeacher(SpyderDockablePlugin):
     def on_application_available(self):
         """Les sujets visibles dans le dialogue Fichier > Ouvrir : dans le filtre « Supported text files », celui que
         Spyder preselectionne quand un .py est ouvert (get_filter prend le premier qui contient l'extension), et
-        dans un filtre a eux. Le conteneur ne calcule ces filtres que s'ils sont encore None : on les lui donne."""
+        dans un filtre a eux. Le conteneur ne calcule ces filtres que s'ils sont encore None : on les lui donne.
+        On part de ceux qu'un autre greffon a pu y poser (spyder_pyxel fait de meme pour les .pyxres) : repartir de
+        get_edit_filetypes() effacait les siens ou les notres, selon l'ordre de chargement (01/10/2026)."""
         conteneur = self.get_plugin(Plugins.Application).get_container()
-        (titre, extensions), *autres = get_edit_filetypes()
+        (titre, extensions), *autres = conteneur.edit_filetypes or get_edit_filetypes()
         types = [(titre, (*extensions, ".qcm")), *autres, ("Sujets SmartTeacher", (".qcm",))]
         conteneur.edit_filetypes, conteneur.edit_filters = types, _get_filters(types)
 
